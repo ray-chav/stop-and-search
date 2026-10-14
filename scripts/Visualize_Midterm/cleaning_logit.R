@@ -147,31 +147,45 @@ AIC(model_reduced, raw_model)
 # Currently using: raw_model
 
 # Trimming Model ===========================
-# 1) Ridge & Lasso -> what variables might we not need
-# Construct feature matrix
-x <- model.matrix(
-  search_occurred ~ . - Latitude - Longitude,
-  data = train_data
-)[, -1]
-# Response vector
-y <- as.numeric(train_data$search_occurred)
+# # 1) Ridge & Lasso -> what variables might we not need
+# # Construct feature matrix
+# x <- model.matrix(
+#   search_occurred ~ . - Latitude - Longitude,
+#   data = train_data
+# )[, -1]
+# # Response vector
+# y <- as.numeric(train_data$search_occurred)
+# 
+# # Modeling for feature selections
+# # Ridge
+# cv_ridge <- cv.glmnet(
+#   x, y,
+#   family = "binomial",
+#   alpha = 0
+# )
+# # Lasso
+# cv_lasso <- cv.glmnet(
+#   x, y,
+#   family = "binomial",
+#   alpha = 1
+# )
+# 
+# # Compare cross-validated performance
+# plot(cv_ridge)
+# plot(cv_lasso)
 
-# Modeling for feature selections
-# Ridge
-cv_ridge <- cv.glmnet(
-  x, y,
-  family = "binomial",
-  alpha = 0
+# 2. Drop 1 on model
+summary(model_reduced)
+drop1(model_reduced, test = "Chisq")
+
+# 3. Refine model gradually
+model <- model_reduced # Redefine so we can keep trimming
+
+# Trim 1) eye color and 2) style
+model_reduced <- update(
+  model,
+  . ~ . - VehicleStyle # cut two insignificant predictors
 )
-# Lasso
-cv_lasso <- cv.glmnet(
-  x, y,
-  family = "binomial",
-  alpha = 1
-)
-
-# Compare cross-validated performance
-plot(cv_ridge)
-plot(cv_lasso)
-
-# Viz Correlations =========================
+# Diagnostics
+AIC(model, model_reduced)
+anova(model, model_reduced, test = "Chisq")
