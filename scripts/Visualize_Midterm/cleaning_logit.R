@@ -5,6 +5,7 @@
 
 # Libraries ================================
 library(tidyverse)
+library(kableExtra)
 library(car)
 
 # Read in Data =============================
@@ -40,17 +41,25 @@ cor_matrix <- cor(
   use = "pairwise.complete.obs"
 )
 # Output correlation matrix
-round(cor_matrix, 2)
+kbl(round(cor_matrix, 2)) |>
+  kable_styling()
+# Conclusion: nothing of concern
 
-# 2) Categorical naive logistic model
-model <- glm(
-  search_occurred ~ .,
-  data = train_data_trim |>
-    select(-any_of("SubjectID")),
-  family = binomial()
+# 2) Categorical naive binomial model
+raw_model <- glm(
+  search_occurred ~ ., # Predict search_occurred
+  data = train_data |>
+    select(-any_of("SubjectID")), # Check all varse -ID
+  family = binomial() # Model choice is simple
 )
+summary(raw_model) # Just for funsieiiiies
 # Check out VIFs (searching for multicollinearity)
-car::vif(model)
+kbl(car::vif(raw_model)) |>
+  kable_styling(
+    full_width = FALSE,
+    font_size = 10
+  )
+# Conclusion: nothing of concern
 
 # Removing variables =======================
 
