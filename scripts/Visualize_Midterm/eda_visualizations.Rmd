@@ -1,0 +1,12 @@
+---
+title: "Midterm EDA Visualizations"
+author: "Rachel Chavez - rcc3342"
+date: "2026-10-13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+```
+
+----------------------------------------------------------
