@@ -118,3 +118,32 @@ summarize_binary <- function(X,
     ) |>
     ungroup()
 }
+
+# Input: X, variable to sort, order (default ascending)
+# Output: Factors of X sorted by their variable value
+sort_bars <- function(data, x, decreasing = FALSE, 
+                      by = NULL, response = NULL) {
+  
+  if (is.null(by)) {
+    # Sort by frequency of the variable
+    data[[x]] <- forcats::fct_infreq(data[[x]])
+    
+    if (!decreasing) {
+      data[[x]] <- forcats::fct_rev(data[[x]])
+    }
+    
+  } else {
+    # Sort by a specific response category's frequency
+    sort_data <- data |>
+      filter(.data[[response]] == by) |>
+      arrange(.data[[x]])
+    
+    ordering <- sort_data[[x]][
+      order(sort_data$freq, decreasing = !decreasing)
+    ]
+    
+    data[[x]] <- factor(data[[x]], levels = ordering)
+  }
+  
+  data
+}

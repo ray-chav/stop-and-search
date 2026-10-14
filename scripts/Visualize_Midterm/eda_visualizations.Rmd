@@ -86,6 +86,12 @@ train_data <- train_data |>
       SubjectRace == "NATIVE HAWAIIAN OR OTHER PACIFIC ISLANDER",
       "NHPI",
       SubjectRace
+    ),
+    
+    night_fct = if_else(
+      night == '0',
+      "Daytime",
+      "Nighttime"
     )
     )
 
@@ -94,10 +100,12 @@ train_data <- train_data |>
 
 ## Category 1: Driver Characteristics
 
-```{r driver}
+```{r driver_race}
 
 # 1) Race & Searches --------------
-ggplot(train_data, aes(x = SubjectRace, fill = SubjectRace)) +
+ggplot(train_data |>
+         sort_bars("SubjectRace", decreasing = TRUE),
+       aes(x = SubjectRace, fill = SubjectRace)) +
   geom_bar() +
   labs(
     title = "Racial Makeup of Searches"
@@ -107,7 +115,13 @@ ggplot(train_data, aes(x = SubjectRace, fill = SubjectRace)) +
   diag_x
 
 # Summarize by response
-ggplot(summarize_binary(train_data, SubjectRace),
+ggplot(summarize_binary(train_data, SubjectRace) |>
+  sort_bars(
+    "SubjectRace",
+    by = "Searched",
+    response = "search_occurred_fct",
+    decreasing = TRUE
+  ),
        aes(x = SubjectRace, y = freq, fill = search_occurred_fct)) +
   geom_col(position = "fill") +
   labs(
@@ -121,9 +135,285 @@ ggplot(summarize_binary(train_data, SubjectRace),
 
 ```
 
+```{r driver_features}
 
-## Category 2: Car Characteristics
+
+# 2) Hair Color --------------
+train_data |>
+  mutate(EyeHair = interaction(SubjectHairColor, SubjectEyeColor)) |>
+  sort_bars("EyeHair", decreasing = TRUE) |>
+  ggplot(aes(x = EyeHair, fill = SubjectHairColor)) +
+  geom_bar() +
+  labs(
+    x = "Hair and Eye Color",
+    title = "Top 8 Combinations of Hair & Eye Color"
+  ) +
+  eda_fill("SubjectHairColor", train_data) +
+  theme_eda() +
+  diag_x + 
+  coord_cartesian(xlim = c(1, 8))
+
+```
+
+```{r driver_height_weight}
+
+ggplot(train_data,
+       aes(x = SubjectHeight, y = SubjectWeight, color = search_occurred_fct)) +
+  geom_point() +
+  labs(
+    title = "Driver Height by Driver Weight",
+    x = "Driver Height (in)",
+    y = "Driver Weight (lb)",
+    caption = "Plots highlighted by search occurrence"
+  ) +
+  scale_color_manual(values = c("Unsearched" = colo_pale[2], "Searched" = colo_pale[1])) +
+  theme_eda()
+
+```
+
+## Category 2: Traffic Characteristics
+
+```{r traffic_vehicle_style}
+
+# 1) Vehicle Style --------------
+ggplot(train_data |>
+         sort_bars("VehicleStyle", decreasing = TRUE),
+       aes(x = VehicleStyle, fill = VehicleStyle)) +
+  geom_bar() +
+  labs(
+    title = "Vehicle Distributions Across Stops"
+  ) +
+  eda_fill("VehicleStyle", train_data) +
+  theme_eda() +
+  diag_x
+
+# Summarize by response
+ggplot(summarize_binary(train_data, StopDescription) |>
+  sort_bars(
+    "StopDescription",
+    by = "Searched",
+    response = "search_occurred_fct",
+    decreasing = TRUE
+  ),
+       aes(x = StopDescription, y = freq, fill = search_occurred_fct)) +
+  geom_col(position = "fill") +
+  labs(
+    x = "Vehicle Style",
+    y = "Proportion",
+    fill = "Search occurred",
+    title = "Searches Across Vehicle Styles"
+  ) +
+  eda_fill("StopDescription", train_data) +
+  theme_eda()
+
+```
+
+```{r traffic_vehicle_year}
+
+# 2) Vehicle Year --------------
+ggplot(train_data_raw,
+       aes(x = VehicleYear)) +
+  geom_histogram() +
+  labs(
+    title = "Vehicle Distributions Across Stops"
+  ) +
+  theme_eda()
+
+# Summarize by response
+ggplot(summarize_binary(train_data_raw, StopDescription) |>
+  sort_bars(
+    "StopDescription",
+    by = "Searched",
+    response = "search_occurred_fct",
+    decreasing = TRUE
+  ),
+       aes(x = StopDescription, y = freq, fill = search_occurred_fct)) +
+  geom_col(position = "fill") +
+  labs(
+    x = "Vehicle Style",
+    y = "Proportion",
+    fill = "Search occurred",
+    title = "Searches Across Vehicle Styles"
+  ) +
+  eda_fill("StopDescription", train_data) +
+  theme_eda()
+
+```
 
 ## Category 3: Time
+
+```{r time_year}
+
+# 1) Year --------------
+ggplot(train_data |>
+         sort_bars("year", decreasing = TRUE),
+       aes(x = year, fill = year)) +
+  geom_bar() +
+  labs(
+    title = "Stops Across Years"
+  ) +
+  eda_fill("year", train_data) +
+  theme_eda() +
+  diag_x
+
+# Summarize by response
+ggplot(summarize_binary(train_data, year) |>
+  sort_bars(
+    "year",
+    by = "Searched",
+    response = "search_occurred_fct",
+    decreasing = TRUE
+  ),
+       aes(x = year, y = log(freq), fill = search_occurred_fct)) +
+  geom_col(position = "fill") +
+  labs(
+    x = "Year",
+    y = "Proportion",
+    fill = "Search occurred",
+    title = "Scaled Stops Across Seven Years"
+  ) +
+  eda_fill("year", train_data) +
+  theme_eda()
+
+```
+
+```{r time_month}
+
+# 2) Month --------------
+ggplot(train_data |>
+         sort_bars("month", decreasing = TRUE),
+       aes(x = month, fill = month)) +
+  geom_bar() +
+  labs(
+    title = "Stops Across Months (2019-2025)"
+  ) +
+  eda_fill("month", train_data) +
+  theme_eda()
+
+# Summarize by response
+ggplot(summarize_binary(train_data, month) |>
+  sort_bars(
+    "month",
+    by = "Searched",
+    response = "search_occurred_fct",
+    decreasing = TRUE
+  ),
+       aes(x = month, y = log(freq), fill = search_occurred_fct)) +
+  geom_col(position = "fill") +
+  labs(
+    x = "Month (1 - January, 12 - December)",
+    y = "Proportion",
+    fill = "Search occurred",
+    title = "Scaled Stops Aggregated by Month"
+  ) +
+  eda_fill("month", train_data) +
+  theme_eda()
+
+```
+
+```{r time_night}
+
+# 3) Night --------------
+ggplot(train_data |>
+         sort_bars("night_fct", decreasing = TRUE),
+       aes(x = night_fct, fill = night_fct)) +
+  geom_bar() +
+  labs(
+    title = "Distribution of Stops by Day/Night"
+  ) +
+  eda_fill("night_fct", train_data) +
+  theme_eda()
+
+# Summarize by response
+ggplot(summarize_binary(train_data, night_fct) |>
+  sort_bars(
+    "night_fct",
+    by = "Searched",
+    response = "search_occurred_fct",
+    decreasing = TRUE
+  ),
+       aes(x = night_fct, y = log(freq), fill = search_occurred_fct)) +
+  geom_col(position = "fill") +
+  labs(
+    x = "Time of Day",
+    y = "Proportion",
+    fill = "Search occurred",
+    title = "Scaled Stops Aggregated by Period"
+  ) +
+  eda_fill("night_fct", train_data) +
+  theme_eda()
+
+```
+
+## Category 4: Incident Details
+
+```{r traffic_incident}
+
+# 1) Reason for Search --------------
+ggplot(train_data |>
+         sort_bars("StopDescription", decreasing = TRUE),
+       aes(x = StopDescription, fill = StopDescription)) +
+  geom_bar() +
+  labs(
+    title = "Incidents Preceding Stop"
+  ) +
+  eda_fill("StopDescription", train_data) +
+  theme_eda() +
+  diag_x
+
+# Summarize by response
+ggplot(summarize_binary(train_data, StopDescription) |>
+  sort_bars(
+    "StopDescription",
+    by = "Searched",
+    response = "search_occurred_fct",
+    decreasing = TRUE
+  ),
+       aes(x = StopDescription, y = freq, fill = search_occurred_fct)) +
+  geom_col(position = "fill") +
+  labs(
+    x = "Reason for Stopping",
+    y = "Proportion",
+    fill = "Search occurred",
+    title = "Search Distribution Among Various Incidents"
+  ) +
+  eda_fill("StopDescription", train_data) +
+  theme_eda()
+
+```
+
+```{r traffic_district}
+
+# 2) District of Search --------------
+ggplot(train_data |>
+         sort_bars("District", decreasing = TRUE),
+       aes(x = District, fill = District)) +
+  geom_bar() +
+  labs(
+    title = "Stops Across Districts"
+  ) +
+  eda_fill("District", train_data) +
+  theme_eda()
+
+# Summarize by response
+ggplot(summarize_binary(train_data, District) |>
+  sort_bars(
+    "District",
+    by = "Searched",
+    response = "search_occurred_fct",
+    decreasing = TRUE
+  ),
+       aes(x = District, y = log(freq), fill = search_occurred_fct)) +
+  geom_col(position = "fill") +
+  labs(
+    x = "District of Stop",
+    y = "Proportion",
+    fill = "Search occurred",
+    title = "Scaled District Distribution Among Various Incidents"
+  ) +
+  eda_fill("District", train_data) +
+  theme_eda()
+
+```
 
 ----------------------------------------------------------
