@@ -95,6 +95,60 @@ setdiff(colnames(train_data), colnames(train_data_trim))
   # 5. SubjectID - idk i think we just dont need it atm
   # 6. Zip - zip code probably heavily tied with district
 
+# Generating Pairwise Comparisons ===========
+# Function to generate and save a ggpairs plot
+# Input: vector range of columns
+        # X
+        # response var of interest
+        # possible directory you want the PNGs saved in
+# Output: saved PNGs of ggpairs run on those columns of interest
+save_gpairs <- function(var_range,
+                        data = train_data_trim,
+                        response = "search_occurred",
+                        directory = "") {
+  
+  # Filter data down to only what we want
+  plot_data <- data |>
+    select(all_of(var_range), all_of(response))
+  
+  # GGpairs plot with our ys
+  p <- ggpairs(
+    plot_data,
+    aes(color = .data[[response]], alpha = 0.5) # Plot y in corner
+  ) +
+    theme_minimal()
+  
+  # Generate fielnames to capture our ranges
+  filename <- paste0(
+    "ggpairs_",
+    min(var_range), "_to_", max(var_range),
+    ".png"
+  )
+  
+  # Attach directory to filenames
+  filename <- file.path(directory, filename)
+  
+  # Save as a png
+  # Dim: 3500x4000
+  ggsave(
+    filename = filename,
+    plot = p,
+    width = 4000,
+    height = 3500,
+    units = 'px',
+    dpi = 300
+  )
+  
+  return(p)
+}
+
+# Run for each group of 3 variables
+for (i in seq(1, 19, by = 3)) {
+  save_gpairs(i:(i + 2),
+              directory = "../../eda_visualizations/ggpairs/")
+}
+
+# Chopped code below ------------------------
 # A stupid amount of ggpairs plots below
 # First 3 variables
 ggpairs(train_data_trim |>
@@ -131,3 +185,4 @@ ggpairs(train_data_trim |>
           select(19:21, 'search_occurred'),
         aes(color = search_occurred, alpha = 0.5)) +
   theme_minimal()
+#--------------------------------
