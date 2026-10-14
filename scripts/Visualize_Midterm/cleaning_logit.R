@@ -45,7 +45,7 @@ kbl(round(cor_matrix, 2)) |>
   kable_styling()
 # Conclusion: nothing of concern
 
-# 2) Categorical naive binomial model
+# 2) Categorical naive logit model
 raw_model <- glm(
   search_occurred ~ ., # Predict search_occurred
   data = train_data |>
@@ -74,7 +74,25 @@ AIC(model_reduced, raw_model)
 # Conclusion: remove Lat and Long!
 
 # Lumping together variables ===============
+summary(model_reduced) #year and month are the biggest
 
+train_data <- train_data |>
+  mutate(
+    
+    # 1. Compress months into seasons -----
+    season = case_when(
+      month %in% c(12, 1, 2) ~ "Winter",
+      month %in% c(3, 4, 5) ~ "Spring",
+      month %in% c(6, 7, 8) ~ "Summer",
+      month %in% c(9, 10, 11) ~ "Fall"
+    ),
+    season = factor(
+      season,
+      levels = c("Winter", "Spring", "Summer", "Fall")
+    ),
+    # 2. Remodeling year as a cont var ----
+    year_num = as.numeric(year)
+  )
 
 # Elementary Logistic Model ================
 
