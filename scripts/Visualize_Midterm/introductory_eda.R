@@ -62,6 +62,7 @@ kable(
   kable_styling(
     position = "center",
     full_width = FALSE,
+    font_size = 35,
     html_font = "my_font"
   )
 
@@ -77,18 +78,9 @@ mosaicplot(Zone ~ District, data = train_data,
 
 # Ensure all categorical variables do not have too many levels
 train_data_trim <- train_data |>
-  
-  # Gender is weird rn
-  # mutate(
-  #   SubjectGender = if_else(
-  #     SubjectGender %in% c("0", "1"), # account for strange decimal values
-  #     as.character(SubjectGender),
-  #     NA_character_
-  #   ),
-  #   SubjectGender = factor(SubjectGender)
-  # ) |>
+  # Clear any NAs if they remain
   tidyr::drop_na() |>
-  
+  # Drop categorical variables w/ more than 10
   select(-where(~ is.factor(.) & n_distinct(.) > 10),
          -SubjectID)
 
@@ -101,40 +93,41 @@ setdiff(colnames(train_data), colnames(train_data_trim))
   # 3. BlockAddress - fine; probably can be excluded
   # 4. StopDate - fine; can be excluded
   # 5. SubjectID - idk i think we just dont need it atm
+  # 6. Zip - zip code probably heavily tied with district
 
 # A stupid amount of ggpairs plots below
 # First 3 variables
 ggpairs(train_data_trim |>
           select(1:3, 'search_occurred'),
-        aes(color = search_occurred, alpha = 0.5)) |>
+        aes(color = search_occurred, alpha = 0.5)) +
   theme_minimal()
 # Second 3 variables
 ggpairs(train_data_trim |>
           select(4:6, 'search_occurred'),
-        aes(color = search_occurred, alpha = 0.5))|>
+        aes(color = search_occurred, alpha = 0.5)) +
   theme_minimal()
 # Third 3 variables
 ggpairs(train_data_trim |>
           select(7:9, 'search_occurred'),
-        aes(color = search_occurred, alpha = 0.5))|>
+        aes(color = search_occurred, alpha = 0.5)) +
   theme_minimal()
 # Fourth 3 variables
 ggpairs(train_data_trim |>
           select(10:12, 'search_occurred'),
-        aes(color = search_occurred, alpha = 0.5))|>
+        aes(color = search_occurred, alpha = 0.5)) +
   theme_minimal()
 # Fifth 3 variables
 ggpairs(train_data_trim |>
           select(13:15, 'search_occurred'),
-        aes(color = search_occurred, alpha = 0.5))|>
+        aes(color = search_occurred, alpha = 0.5)) +
   theme_minimal()
 # Sixth 3 variables
 ggpairs(train_data_trim |>
           select(16:18, 'search_occurred'),
-        aes(color = search_occurred, alpha = 0.5))|>
+        aes(color = search_occurred, alpha = 0.5)) +
   theme_minimal()
-# Seventh 4 variables
+# Seventh 3 variables
 ggpairs(train_data_trim |>
-          select(19:22, 'search_occurred'),
-        aes(color = search_occurred, alpha = 0.5)) |>
+          select(19:21, 'search_occurred'),
+        aes(color = search_occurred, alpha = 0.5)) +
   theme_minimal()
