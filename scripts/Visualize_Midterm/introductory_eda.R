@@ -19,8 +19,19 @@ train_data <- read.csv('../../data/final_test_train/stop_search_train_imputed.cs
 colnames(train_data)
 
 # Factor search occurred variable
-train_data <- train_data %>%
-  mutate(across(where(~ !is.numeric(.)), as.factor))
+cont_variables <- c(
+  "VehicleYear", "SubjectAge", "SubjectHeight",
+  "SubjectWeight", "Longitude", "Latitude", "hour"
+)
+train_data <- train_data |>
+  # Turn all variables into factors
+  mutate(across(everything(), as.factor)) |>
+  
+  # Turn the appropriate variables into continuous measures
+  mutate(across(
+    all_of(cont_variables),
+    as.numeric
+  ))
 
 # Build proportion table/dataframe
 prop_df <- train_data |>
@@ -66,8 +77,21 @@ mosaicplot(Zone ~ District, data = train_data,
 
 # Ensure all categorical variables do not have too many levels
 train_data_trim <- train_data |>
+  
+  # Gender is weird rn
+  # mutate(
+  #   SubjectGender = if_else(
+  #     SubjectGender %in% c("0", "1"), # account for strange decimal values
+  #     as.character(SubjectGender),
+  #     NA_character_
+  #   ),
+  #   SubjectGender = factor(SubjectGender)
+  # ) |>
+  tidyr::drop_na() |>
+  
   select(-where(~ is.factor(.) & n_distinct(.) > 10),
          -SubjectID)
+
 # Which vars did we cut?
 setdiff(colnames(train_data), colnames(train_data_trim))
 
@@ -78,14 +102,42 @@ setdiff(colnames(train_data), colnames(train_data_trim))
   # 4. StopDate - fine; can be excluded
   # 5. SubjectID - idk i think we just dont need it atm
 
-# First 5 variables
+# A stupid amount of ggpairs plots below
+# First 3 variables
 ggpairs(train_data_trim |>
-          select(1:4, 'search_occurred'),
-        aes(color = search_occurred, alpha = 0.5))
-# Second 5 variables
-# Third 4 variables
-# Fourth 4 variables
-# Fifth 4 variables
+          select(1:3, 'search_occurred'),
+        aes(color = search_occurred, alpha = 0.5)) |>
+  theme_minimal()
+# Second 3 variables
+ggpairs(train_data_trim |>
+          select(4:6, 'search_occurred'),
+        aes(color = search_occurred, alpha = 0.5))|>
+  theme_minimal()
+# Third 3 variables
+ggpairs(train_data_trim |>
+          select(7:9, 'search_occurred'),
+        aes(color = search_occurred, alpha = 0.5))|>
+  theme_minimal()
+# Fourth 3 variables
+ggpairs(train_data_trim |>
+          select(10:12, 'search_occurred'),
+        aes(color = search_occurred, alpha = 0.5))|>
+  theme_minimal()
+# Fifth 3 variables
+ggpairs(train_data_trim |>
+          select(13:15, 'search_occurred'),
+        aes(color = search_occurred, alpha = 0.5))|>
+  theme_minimal()
+# Sixth 3 variables
+ggpairs(train_data_trim |>
+          select(16:18, 'search_occurred'),
+        aes(color = search_occurred, alpha = 0.5))|>
+  theme_minimal()
+# Seventh 4 variables
+ggpairs(train_data_trim |>
+          select(19:22, 'search_occurred'),
+        aes(color = search_occurred, alpha = 0.5)) |>
+  theme_minimal()
 
 # Elementary Logistic Model ================
 
