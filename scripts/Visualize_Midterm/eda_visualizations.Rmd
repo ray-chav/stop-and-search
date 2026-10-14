@@ -9,4 +9,121 @@ output: html_document
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 ```
 
+## Defining Themes & Color Palettes
+
+```{r constants}
+
+# Libraries ======
+library(ggplot2)
+#=================
+
+# Read in themes & functions
+source('functions_visualization.R')
+
+# Used for all visualizations
+colo_pale <- c(
+  '#335c67',
+  '#fff3b0',
+  '#e09f3e',
+  '#9e2a2b',
+  '#540b0e',
+  "#C4775A",
+  "#C99488",
+  "#8FA694",
+  "#A6A078",
+  "#D2AA69",
+  "#E2CFB0",
+  "#76594A",
+  "#719D99",
+  "#F0E9DC"
+)
+
+diag_x = theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+## Reading in & Prepping Data
+
+```{r read_prep}
+
+train_data_raw <- read.csv('../../data/final_test_train/stop_search_train_imputed.csv')
+# Prep data
+# Factorize all non-continuous measures
+cont_variables <- c(
+  "VehicleYear", "SubjectAge", "SubjectHeight",
+  "SubjectWeight", "Longitude", "Latitude", "hour"
+)
+train_data <- train_data_raw |>
+  # Turn all variables into factors
+  mutate(across(everything(), as.factor)) |>
+  
+  # Turn the appropriate variables into continuous measures
+  mutate(across(
+    all_of(cont_variables),
+    as.numeric
+  )) |>
+  
+  # Remove relevant variables (see 10/13 documentation for justification)
+  select(-where(~ is.factor(.) & n_distinct(.) > 10),
+         -Longitude, # Remove these variables
+         -Latitude) |>
+  
+  mutate(search_occurred_fct = if_else(
+      search_occurred == 0,
+      "Searched",
+      "Unsearched"
+    ))
+
+```
+
+### Relabeling Data
+
+```{r relab}
+
+train_data <- train_data |>
+  mutate(
+    SubjectRace = if_else(
+      SubjectRace == "NATIVE HAWAIIAN OR OTHER PACIFIC ISLANDER",
+      "NHPI",
+      SubjectRace
+    )
+    )
+
+```
+
+
+## Category 1: Driver Characteristics
+
+```{r driver}
+
+# 1) Race & Searches --------------
+ggplot(train_data, aes(x = SubjectRace, fill = SubjectRace)) +
+  geom_bar() +
+  labs(
+    title = "Racial Makeup of Searches"
+  ) +
+  eda_fill("SubjectRace", train_data) +
+  theme_eda() +
+  diag_x
+
+# Summarize by response
+ggplot(summarize_binary(train_data, SubjectRace),
+       aes(x = SubjectRace, y = freq, fill = search_occurred_fct)) +
+  geom_col(position = "fill") +
+  labs(
+    x = "Identified Race of Subject",
+    y = "Proportion",
+    fill = "Search occurred",
+    title = "Search Distribution Among Racial Groups"
+  ) +
+  eda_fill("SubjectRace", train_data) +
+  theme_eda()
+
+```
+
+
+## Category 2: Car Characteristics
+
+## Category 3: Time
+
 ----------------------------------------------------------
