@@ -138,11 +138,3 @@ ggpairs(train_data_trim |>
           select(19:22, 'search_occurred'),
         aes(color = search_occurred, alpha = 0.5)) |>
   theme_minimal()
-
-# Elementary Logistic Model ================
-
-
-# Trimming Model ===========================
-
-
-# Viz Correlations =========================
