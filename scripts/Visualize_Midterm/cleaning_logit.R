@@ -62,7 +62,16 @@ kbl(car::vif(raw_model)) |>
 # Conclusion: nothing of concern
 
 # Removing variables =======================
+# Exclude latitude and longitude
+model_reduced <- update(
+  raw_model,
+  . ~ . - Latitude - Longitude
+)
 
+# Compare model fit
+anova(model_reduced, raw_model, test = "Chisq")
+AIC(model_reduced, raw_model)
+# Conclusion: remove Lat and Long!
 
 # Lumping together variables ===============
 
