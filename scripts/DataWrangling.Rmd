@@ -1,0 +1,87 @@
+---
+title: "SDS336_DataWrangling"
+author: "Maggie Ma"
+date: "2026-10-03"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lubridate)
+setwd("C:/Users/maggi/CollegeSchoolWork/SDS336_MachineLearning")
+```
+
+
+```{r}
+df <- read.csv("stop_search_2021_2026.csv")
+head(df)
+```
+
+
+```{r}
+# find the longest 10 strings to see all possible action categories in ActionsTaken
+longest_10_strings <- head(df$ActionsTaken[order(-nchar(df$ActionsTaken))], 10)
+longest_10_strings
+```
+
+
+```{r}
+df_cleaned <- df |>
+  mutate(
+    # Separating all the ActionsTaken variables
+    subject_type = str_extract(ActionsTaken, "(?<=Subject Type: )[^;]+"),
+    search_occurred = str_extract(ActionsTaken, "(?<=Search Occurred: )[^;]+"),
+    evidence_seized = str_extract(ActionsTaken, "(?<=Evidence Seized: )[^;]+"),
+    search_types = str_extract(ActionsTaken, "(?<=Search Types: )[^;]+"),
+    search_types = map_chr(
+      str_extract_all(ActionsTaken, "(?<=Search Types: )[^;]+"), 
+      ~ if(length(.x) == 0) NA_character_ else paste(.x, collapse = ", ")
+    ),
+    legal_basises = map_chr(
+      str_extract_all(ActionsTaken, "(?<=Legal Basises: )[^;]+"), 
+      ~ if(length(.x) == 0) NA_character_ else paste(.x, collapse = ", ")
+    ),
+    evidence_seized = str_extract(ActionsTaken, "(?<=Evidence Seized: )[^;]+"),
+    evidence_types = map_chr(
+      str_extract_all(ActionsTaken, "(?<=Evidence Types: )[^;]+"), 
+      ~ if(length(.x) == 0) NA_character_ else paste(.x, collapse = ", ")
+    ),
+    stop_results = map_chr(
+      str_extract_all(ActionsTaken, "(?<=Stop Results: )[^;]+"), 
+      ~ if(length(.x) == 0) NA_character_ else paste(.x, collapse = ", ")
+    ),
+    consent_to_search = str_extract(ActionsTaken, "(?<=Consent To Search: )[^;]+"),
+    exit_vehicle = str_extract(ActionsTaken, "(?<=Exit Vehicle: )[^;]+"),
+    
+    # 2018-2021 dataset and forward
+    pat_down = str_extract(ActionsTaken, "(?<=Search Type Pat Down: )[^;]+"),
+    consent_form_completed = str_extract(ActionsTaken, "(?<=Consent Form Completed: )[^;]+"),
+    stripbody_cavity_search = str_extract(ActionsTaken, "(?<=StripBody Cavity Search: )[^;]+"),
+    legal_basises_relevant_factors = str_extract(ActionsTaken, "(?<=Legal Basises - Relevant Factors: )[^;]+"),
+    subject_restrained = str_extract(ActionsTaken, "(?<=Subject Restrained: )[^;]+"),
+    subject_restraint_devices = map_chr(
+      str_extract_all(ActionsTaken, "(?<=Subject Restraint Devices: )[^;]+"), 
+      ~ if(length(.x) == 0) NA_character_ else paste(.x, collapse = ", ")
+    ),
+    
+    # Time variables
+    event_dt   = parse_date_time(EventDate, orders = "Y b d I:M:S p"),
+    hour       = hour(event_dt),
+    night      = if_else(hour >= 18 | hour < 6, 1L, 0L),  # assumption: 6pm-6am
+
+    # Fix placeholder coordinates
+    Latitude  = na_if(Latitude, 0),
+    Longitude = na_if(Longitude, 0)
+  )
+```
+
+```{r}
+head(df_cleaned)
+```
+
+```{r}
+write.csv(df_cleaned, "C:/Users/maggi/CollegeSchoolWork/SDS336_MachineLearning/stop_search_cleaned_2021_2026.csv", row.names = FALSE)
+```
+
+
