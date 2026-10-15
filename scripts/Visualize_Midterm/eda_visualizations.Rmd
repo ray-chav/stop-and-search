@@ -465,7 +465,7 @@ ggplot(summarize_binary(day_train, SubjectRace) |>
     "SubjectRace",
     by = "Searched",
     response = "search_occurred_fct",
-    decreasing = TRUE
+    decreasing = FALSE
   ),
        aes(x = SubjectRace, y = log(freq), fill = search_occurred_fct)) +
   geom_col(position = "fill") +
@@ -483,7 +483,7 @@ ggplot(summarize_binary(night_train, SubjectRace) |>
     "SubjectRace",
     by = "Searched",
     response = "search_occurred_fct",
-    decreasing = TRUE
+    decreasing = FALSE
   ),
        aes(x = SubjectRace, y = log(freq), fill = search_occurred_fct)) +
   geom_col(position = "fill") +
