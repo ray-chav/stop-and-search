@@ -67,12 +67,17 @@ train_data <- train_data_raw |>
   select(-where(~ is.factor(.) & n_distinct(.) > 10),
          -Longitude, # Remove these variables
          -Latitude) |>
-  
-  mutate(search_occurred_fct = if_else(
-      search_occurred == 0,
-      "Searched",
-      "Unsearched"
-    ))
+    
+  mutate(
+    search_occurred_fct = factor(
+      if_else(
+        search_occurred == 1,
+        "Searched",
+        "Unsearched"
+      ),
+      levels = c("Unsearched", "Searched")
+    )
+  )
 
 ```
 
@@ -92,7 +97,17 @@ train_data <- train_data |>
       night == '0',
       "Daytime",
       "Nighttime"
-    )
+    ),
+    
+    age_group = factor(case_when(
+      SubjectAge < 18 ~ 'Under 18',
+      SubjectAge %in% 18:24 ~ '18-24',
+      SubjectAge %in% 25:34 ~ '25-34',
+      SubjectAge %in% 35:44 ~ '35-44',
+      SubjectAge %in% 45:54 ~ '45-54',
+      SubjectAge >= 55 ~ '55+',
+    ))
+    
     )
 
 ```
@@ -108,7 +123,7 @@ ggplot(train_data |>
        aes(x = SubjectRace, fill = SubjectRace)) +
   geom_bar() +
   labs(
-    title = "Racial Makeup of Searches"
+    title = "Racial Makeup of Stops"
   ) +
   eda_fill("SubjectRace", train_data) +
   theme_eda() +
@@ -120,7 +135,7 @@ ggplot(summarize_binary(train_data, SubjectRace) |>
     "SubjectRace",
     by = "Searched",
     response = "search_occurred_fct",
-    decreasing = TRUE
+    decreasing = FALSE
   ),
        aes(x = SubjectRace, y = freq, fill = search_occurred_fct)) +
   geom_col(position = "fill") +
@@ -157,6 +172,7 @@ train_data |>
 
 ```{r driver_height_weight}
 
+# 3) Driver height weight -------
 ggplot(train_data,
        aes(x = SubjectHeight, y = SubjectWeight, color = search_occurred_fct)) +
   geom_point() +
@@ -170,6 +186,22 @@ ggplot(train_data,
   theme_eda()
 
 ```
+
+```{r driver_age}
+
+ggplot(train_data |>
+         sort_bars("age_group", decreasing = TRUE),
+       aes(x = age_group, fill = search_occurred_fct)) +
+  geom_bar() +
+  labs(
+    title = "Age Makeup of Stops & Searches",
+    x = "Age Group"
+  ) +
+  eda_fill("search_occurred", train_data) +
+  theme_eda()
+
+```
+
 
 ## Category 2: Traffic Characteristics
 
@@ -188,14 +220,14 @@ ggplot(train_data |>
   diag_x
 
 # Summarize by response
-ggplot(summarize_binary(train_data, StopDescription) |>
+ggplot(summarize_binary(train_data, VehicleStyle) |>
   sort_bars(
-    "StopDescription",
+    "VehicleStyle",
     by = "Searched",
     response = "search_occurred_fct",
-    decreasing = TRUE
+    decreasing = FALSE
   ),
-       aes(x = StopDescription, y = freq, fill = search_occurred_fct)) +
+       aes(x = VehicleStyle, y = freq, fill = search_occurred_fct)) +
   geom_col(position = "fill") +
   labs(
     x = "Vehicle Style",
@@ -203,7 +235,7 @@ ggplot(summarize_binary(train_data, StopDescription) |>
     fill = "Search occurred",
     title = "Searches Across Vehicle Styles"
   ) +
-  eda_fill("StopDescription", train_data) +
+  eda_fill("VehicleStyle", train_data) +
   theme_eda()
 
 ```
@@ -225,7 +257,7 @@ ggplot(summarize_binary(train_data_raw, StopDescription) |>
     "StopDescription",
     by = "Searched",
     response = "search_occurred_fct",
-    decreasing = TRUE
+    decreasing = FALSEs
   ),
        aes(x = StopDescription, y = freq, fill = search_occurred_fct)) +
   geom_col(position = "fill") +
@@ -262,7 +294,7 @@ ggplot(summarize_binary(train_data, year) |>
     "year",
     by = "Searched",
     response = "search_occurred_fct",
-    decreasing = TRUE
+    decreasing = FALSE
   ),
        aes(x = year, y = log(freq), fill = search_occurred_fct)) +
   geom_col(position = "fill") +
@@ -296,7 +328,7 @@ ggplot(summarize_binary(train_data, month) |>
     "month",
     by = "Searched",
     response = "search_occurred_fct",
-    decreasing = TRUE
+    decreasing = FALSE
   ),
        aes(x = month, y = log(freq), fill = search_occurred_fct)) +
   geom_col(position = "fill") +
@@ -330,7 +362,7 @@ ggplot(summarize_binary(train_data, night_fct) |>
     "night_fct",
     by = "Searched",
     response = "search_occurred_fct",
-    decreasing = TRUE
+    decreasing = FALSE
   ),
        aes(x = night_fct, y = log(freq), fill = search_occurred_fct)) +
   geom_col(position = "fill") +
@@ -367,7 +399,7 @@ ggplot(summarize_binary(train_data, StopDescription) |>
     "StopDescription",
     by = "Searched",
     response = "search_occurred_fct",
-    decreasing = TRUE
+    decreasing = FALSE
   ),
        aes(x = StopDescription, y = freq, fill = search_occurred_fct)) +
   geom_col(position = "fill") +
@@ -401,7 +433,7 @@ ggplot(summarize_binary(train_data, District) |>
     "District",
     by = "Searched",
     response = "search_occurred_fct",
-    decreasing = TRUE
+    decreasing = FALSE
   ),
        aes(x = District, y = log(freq), fill = search_occurred_fct)) +
   geom_col(position = "fill") +
@@ -415,5 +447,57 @@ ggplot(summarize_binary(train_data, District) |>
   theme_eda()
 
 ```
+
+## Nighttime Discrimination Detail
+
+```{r}
+
+# Day 
+day_train <- train_data |>
+  filter(night == "1")
+# Night
+night_train <- train_data |>
+  filter(night == "0")
+
+# 1) Race --------------
+ggplot(summarize_binary(day_train, SubjectRace) |>
+  sort_bars(
+    "SubjectRace",
+    by = "Searched",
+    response = "search_occurred_fct",
+    decreasing = TRUE
+  ),
+       aes(x = SubjectRace, y = log(freq), fill = search_occurred_fct)) +
+  geom_col(position = "fill") +
+  labs(
+    x = "Identified Race",
+    y = "Proportion",
+    fill = "Search occurred",
+    title = "Scaled Race Distribution Among Day Stops"
+  ) +
+  eda_fill("SubjectRace", train_data) +
+  theme_eda()
+
+ggplot(summarize_binary(night_train, SubjectRace) |>
+  sort_bars(
+    "SubjectRace",
+    by = "Searched",
+    response = "search_occurred_fct",
+    decreasing = TRUE
+  ),
+       aes(x = SubjectRace, y = log(freq), fill = search_occurred_fct)) +
+  geom_col(position = "fill") +
+  labs(
+    x = "Identified Race",
+    y = "Proportion",
+    fill = "Search occurred",
+    title = "Scaled Race Distribution Among Night Stops"
+  ) +
+  eda_fill("SubjectRace", train_data) +
+  theme_eda() +
+  coord_cartesian(ylim = c(0,1))
+
+```
+
 
 ----------------------------------------------------------
