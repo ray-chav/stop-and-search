@@ -10,7 +10,7 @@
     - Random forest WIP
 - Logistic regression concerns: It might be data leakage between the folds to do feature selection on the whole dataset; LASSO regression might be the better option
   - LASSO will be used on our remaining variables
-- Maybe a poll for which we can vote on which variables are theoretically ideal?
+- Maybe a poll where we can vote on which variables are theoretically ideal?
 - On refining location variables: start with broader variable `District`, then work up to `Zip code` for interesting/relevant districts
   - Keeping `District` now could be modeled with a random effects model s.t. we can account for population differences in income, race, other variables (demographic information)
     - Dependency on which `District` they come from / some association we can implement using a REM
@@ -27,4 +27,4 @@
   10. Slides (Maha)
 - Timeline:
   - Feature Selection - 11.10
-- **Reminder**: 11.17
+- **Reminder**: 11.17 IS OUR PRESENTATION DATE!!
