@@ -13,3 +13,12 @@ All documentation from 10/20 onwards goes here. Write at the top of the document
 - [ ] Here's another list item
 
 ------------------------------------
+
+# 11.09 \- Rachel
+
+* Made feature selection Google Doc: [here](https://docs.google.com/document/d/1-PnS19vH6rFnivDEdW9Wowv8eVaFm1W7XDHfhArBYjI/edit?usp=sharing) 
+* To Do:  
+- [ ] Select a first pass range of features
+
+------------------------------------
+
