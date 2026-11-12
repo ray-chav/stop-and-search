@@ -1,6 +1,35 @@
 # Meeting Notes - Stop & Search
 *11.09 - ??/??*
 
+### 11.12
+Things Done:
+- Vijay has finished feature selection --> 14 significant features
+- Surafel has finished hyperparameter tuning for log reg and decision tree; working on random forest
+- Maha made slide template
+- Scheduled presentation rehearsal for 11.16 @7PM
+
+Timeline
+- Surafel's part done by today
+- Maggie part done by Friday?
+
+Misc. Note
+- Visualizations we want (Ray's task):
+  - Forest plot of all variables
+  - Marginal effects plots of variables of interest
+  - Partial dependency plot
+  - SHAP values
+  - Model performance plot (training vs. test)
+  - Brier score, F1, precision recall, statistical plots of that nature
+  - Basic EDA description of data plots
+ - Slides division
+  - Maha: Motivation, Problem Setup, Modeling, Evaluation
+  - Rachel: Interpretation, Discussion
+
+To-Do:
+[] Maggie will work on script for calibration while Surafel finalizes models
+[] Maha will start on introductory slides
+[] Vijay will refine one of his plots for validation
+
 ### 11.09
 - Things Done:
   - Surafel: **Cross-validation pipeline**
@@ -28,15 +57,3 @@
 - Timeline:
   - Feature Selection - 11.10
 - **Reminder**: 11.17 IS OUR PRESENTATION DATE!!
-
-### 11.12
-Things Done:
-- Vijay has finished feature selection --> 14 significant features
-- Surafel has finished hyperparameter tuning for log reg and decision tree; working on random forest
-
-To-Do:
-- Maggie will work on script for calibration while Surafel finalizes models
-
-Timeline
-- Surafel's part done by today
-- Maggie part done by Friday?
