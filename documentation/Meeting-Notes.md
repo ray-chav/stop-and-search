@@ -28,3 +28,15 @@
 - Timeline:
   - Feature Selection - 11.10
 - **Reminder**: 11.17 IS OUR PRESENTATION DATE!!
+
+### 11.12
+Things Done:
+- Vijay has finished feature selection --> 14 significant features
+- Surafel has finished hyperparameter tuning for log reg and decision tree; working on random forest
+
+To-Do:
+- Maggie will work on script for calibration while Surafel finalizes models
+
+Timeline
+- Surafel's part done by today
+- Maggie part done by Friday?
