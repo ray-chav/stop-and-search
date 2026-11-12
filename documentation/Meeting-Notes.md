@@ -26,9 +26,9 @@ Misc. Note
   - Rachel: Interpretation, Discussion
 
 To-Do:
-[ ] Maggie will work on script for calibration while Surafel finalizes models
-[ ] Maha will start on introductory slides
-[ ] Vijay will refine one of his plots for validation
+- [ ] Maggie will work on script for calibration while Surafel finalizes models
+- [ ] Maha will start on introductory slides
+- [ ] Vijay will refine one of his plots for validation
 
 ### 11.09
 - Things Done:
