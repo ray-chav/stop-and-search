@@ -21,7 +21,7 @@ Misc. Note
   - Model performance plot (training vs. test)
   - Brier score, F1, precision recall, statistical plots of that nature
   - Basic EDA description of data plots
- - Slides division
+- Slides division
   - Maha: Motivation, Problem Setup, Modeling, Evaluation
   - Rachel: Interpretation, Discussion
 
