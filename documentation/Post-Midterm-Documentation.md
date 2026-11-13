@@ -26,7 +26,7 @@ All documentation from 10/20 onwards goes here. Write at the top of the document
 
 * Finalized hyperparameter tuning for our models of choice: LASSO Logistic Regression, Decision Tree Classifier, Random Forest Classifier
 * Logistic regression parameters that were tuned:
-- [ ] C (Inverse of regularization parameter: Smaller C = stronger regularization)
+** C (Inverse of regularization parameter: Smaller C = stronger regularization)
 * Decision tree parameters that were tuned:
 - [ ] Criterion (gini or entropy), max depth, minimum samples of split, minimum samples of leaf
 * Random forest parameters that were tuned:
