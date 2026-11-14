@@ -12,6 +12,25 @@ All documentation from 10/20 onwards goes here. Write at the top of the document
 - [ ] Here's something OP needs to remind themselves or someone else to do
 - [ ] Here's another list item
 
+# 11.11-13 \- Surafel
+
+* Finalized hyperparameter tuning for our models of choice: LASSO Logistic Regression, Decision Tree Classifier, Random Forest Classifier
+* Logistic regression parameters that were tuned:
+  * C (Inverse of regularization parameter: Smaller C = stronger regularization)
+* Decision tree parameters that were tuned:
+  * Criterion (gini or entropy), max depth, minimum samples of split, minimum samples of leaf
+* Random forest parameters that were tuned:
+  * Max depth, minimum samples of split, minimum samples of leaf, max features
+* Used PR-AUC/Average Precision metric to decide on optimal metrics, but also looked at ROC-AUC and Brier Score
+* Uploaded all notebooks for hyperparameter tuning
+* Ran 10-Fold cross validation comparing all three models using: PR-AUC/Average Precision, ROC-AUC, Brier score, Expected Calibration Error (ECE)
+  * Random forest had the best performance generally
+  * Uploaded notebook for cross-val (preprocessing_pipeline)
+* Uploaded visuals in plots folder of my branch
+* To do:
+- [ ] Calibrate random forest model
+- [ ] Tune the decision threshold of random forest using F1 as the metric to maximize, or find optimal threshold using Precision-Recall curve (try both)
+- [ ] After finding optimal threshold, try random forest on entire training set and evaluate F1, Precision, Recall, and other metrics
 ------------------------------------
 
 # 11.09 \- Rachel
@@ -22,18 +41,3 @@ All documentation from 10/20 onwards goes here. Write at the top of the document
 
 ------------------------------------
 
-# 11.11-13 \- Surafel
-
-* Finalized hyperparameter tuning for our models of choice: LASSO Logistic Regression, Decision Tree Classifier, Random Forest Classifier
-* Logistic regression parameters that were tuned:
-** C (Inverse of regularization parameter: Smaller C = stronger regularization)
-* Decision tree parameters that were tuned:
-- [ ] Criterion (gini or entropy), max depth, minimum samples of split, minimum samples of leaf
-* Random forest parameters that were tuned:
-- [ ] Max depth, minimum samples of split, minimum samples of leaf, max features
-* Used PR-AUC/Average Precision metric to decide on optimal metrics, but also looked at ROC-AUC and Brier Score
-* Uploaded all notebooks for hyperparameter tuning
-* Ran 10-Fold cross validation comparing all three models using: PR-AUC/Average Precision, ROC-AUC, Brier score, Expected Calibration Error (ECE)
-- [ ] Random forest had the best performance generally
-- [ ] Uploaded notebook for cross-val (preprocessing_pipeline)
-- [ ] Uploaded visuals in plots folder of my branch
