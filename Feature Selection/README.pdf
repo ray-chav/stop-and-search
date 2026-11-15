@@ -1,0 +1,267 @@
+Cross-Validated Feature Selection
+ML Project documentation log (continuation of the original Feature Selection log). Notebook: ML_Project_Feature_Selection_CV.ipynb. This version reflects the third run (full pipeline with fold-wise imputation, StopDescription added).
+With feature selection done inside each CV fold, no method beats keeping all 20 variables. The consensus rule keeps 13 variables that are stable across folds (16 when run once on the full training set), at a cost of 0.0013 AUC (logistic regression) or 0.0035 (gradient boosting).
+
+What Changed and Why
+The original script fitted every selection step (univariate tests, mutual information, lasso, random forest, multivariable regression) on the whole training set and only compared feature sets with cross-validation afterwards. The held-out folds had therefore already influenced which features were chosen, so the CV scores were optimistic. This was the last item in the original log ("Redo feature selection within each fold").
+The new notebook puts the selection inside each CV fold:
+The preprocessing code from preprocessing_pipeline.ipynb is reused as the front end of one scikit-learn Pipeline: bin rare levels, impute, one-hot encode, scale, select features, final model.
+cross_validate runs on that pipeline, so binning, imputation, encoding, scaling and the selection itself are fitted on the training part of each fold only. The validation part of the fold is only transformed.
+Selection works on the original variable: all dummies of a categorical (and its missing-value indicator) are kept or dropped together.
+The test set is never loaded.
+Folds are identical for every method (5-fold stratified, seed 10), so results are paired.
+
+Setup
+The row count, positive rate and dropped text columns were printed in the first run (121,317 rows, 5.507% positive, 6,681 events; BlockAddress and StopDate dropped as non-numeric). The printout for the current run was not provided, so these figures are not re-confirmed for the current data file.
+
+Candidate variables: 20.
+Categorical (8): VehicleStyle, VehicleColor, SubjectRace, SubjectEyeColor, SubjectHairColor, Zip, StopDescription, District. District is a numeric district code with 8 levels; it is converted to text and one-hot encoded like the other categoricals. StopDescription is new in this run.
+Numeric (6): SubjectAge, SubjectHeight, SubjectWeight, VehicleYear, hour, month.
+Binary (6): SubjectGender, isLA, SubjectHasPhotoID, night, weekend, isDriver.
+
+isTrafficViolation was a candidate in the earlier runs but is not in this notebook's column lists. The candidate count (20) equals the number of listed variables, so it appears not to be in the current data file (assuming every listed column is present). It also does not appear in either selected list below, so results are not directly comparable with the earlier runs.
+Compared with the 24 in the original log, year, Zone, Latitude and Longitude are excluded because the preprocessing pipeline drops them (they are in its drop list). year was the second-strongest single predictor in the original log (OR 0.65 per SD, AUC 0.641) and is not a candidate here, so the AUCs below are not comparable to the original log's 0.82.
+
+Preprocessing: the full pipeline, fitted inside each fold: rare levels under 1% pooled into Other; ordinal encoding of categoricals; iterative imputation of missing values (histogram gradient boosting regressor, up to 5 iterations); imputed values rounded and clipped to the training range; one-hot encoding of categoricals and scaling of numeric columns. The first two runs used the simple pipeline (median / most-frequent / "Missing" imputation with missing indicators), with one fix to the original calls: build_simple_pipeline was being passed dis_cols where it expects bin_cols, which sent age, height, weight, vehicle year, month and hour through the pipeline twice (once scaled, once raw). That fix no longer applies, because the full pipeline is used.
+
+Final models (used only to score each selection): L2 logistic regression, and histogram gradient boosting (learning rate 0.1, 200 iterations, early stopping).
+
+Metrics: ROC AUC (main), average precision, Brier score.
+
+Selection Methods (all run inside each fold)
+Method
+Rule for keeping a variable
+Why it is uniquely useful
+Pros
+Cons
+none
+Baseline, keep everything
+The reference point: shows whether any selection is worth doing at all (here, none improved AUC).
+No selection variance; best or tied-best AUC.
+No reduction and no interpretability gain.
+lasso
+L1 logistic regression on standardized features; C chosen by inner 3-fold CV on AUC; keep if any coefficient is non-zero
+Multivariable: judges each variable given all the others at once, so it can drop a variable that adds nothing once the rest are in.
+One fit gives a sparse model; handles many dummies; penalty tuned on AUC.
+At the best-AUC C it keeps almost everything (19.6 of 20); linear and additive only; picks arbitrarily among correlated variables; one non-zero dummy keeps the whole variable.
+lasso_1se
+Same, but the strongest penalty whose inner CV AUC is within 1 SE of the best
+The only lasso variant that actually prunes: it prefers the simplest model that is statistically as good as the best.
+Sparser than lasso (17.8 of 20) with almost no AUC loss; principled stopping rule.
+Still prunes little here; the SE comes from only 3 inner folds, so the kept set varies by fold (SD 0.7 variables).
+rf_impurity
+Random forest impurity importance (summed over dummies) must beat a random noise column
+Captures non-linear effects and interactions at almost no cost: importance is a by-product of one forest fit.
+Fast; non-linear; has a built-in noise yardstick.
+Computed on training rows; biased toward continuous and many-level variables. Kept about 6 variables and lost about 0.030 to 0.035 AUC. See the comparison with permutation importance below.
+rf_perm
+Random forest permutation importance on an inner 25% hold-out; all columns of a variable shuffled together; keep if the AUC drop is above 2 SD and above 0 (5 repeats, up to 8,000 rows)
+Measures how much held-out predictive accuracy depends on the variable, non-linearly, with a categorical judged as a whole.
+Uses rows the forest did not train on; result is in AUC points; less biased toward many-level variables than impurity.
+Correlated variables mask each other (for example Zip and District); the 2 SD rule is lenient and noisy with 5 repeats; forest trained on only 75% of the fold; slower.
+mutual_info
+MI must beat the largest MI from a shuffled target (30,000-row subsample)
+Model-free: detects any dependence, including non-monotonic patterns a linear test cannot see, with a data-based chance threshold.
+No model assumptions; explicit noise floor.
+Looks at one variable at a time (ignores redundancy and interactions); hard to estimate for sparse dummies and a 5.5% positive rate; the subsample makes it noisy (SD 2.2 variables). Kept about 10 variables and lost about 0.008 to 0.013 AUC.
+univariate_lrt
+Likelihood-ratio test of the variable alone vs. intercept-only, Benjamini–Hochberg adjusted, alpha 0.05
+The only formal significance test: each variable gets one test across all its dummies, with multiple-testing control.
+Whole-variable test with a stated error rate; fast and deterministic; easy to explain.
+Ignores other variables, so a proxy can look significant and a variable that matters only after adjustment is missed (hour: 0 of 5 folds in the second run). With this many rows nearly everything is significant (18 of 20).
+consensus
+Keep if at least 3 of 5 votes: univariate_lrt, mutual_info, lasso, rf_impurity, rf_perm
+Combines checks with different assumptions (univariate vs. multivariable, linear vs. non-linear, model-based vs. model-free), so no single method's bias decides alone.
+Prunes about 5 variables (20 to 14.8) for a small AUC cost (-0.0013 logistic regression, -0.0035 gradient boosting); a variable backed by several methods is less likely to be a chance pick.
+The 3-vote threshold is arbitrary; the lenient voters (univariate_lrt, lasso) add votes, so rf_perm, rf_impurity and mutual_info usually decide; slowest, since it runs all five.
+
+The original log also used a multivariable logistic regression drop-one test as a vote. It is not part of the new consensus; the lasso covers that role.
+
+Random forest: impurity vs. permutation importance
+Impurity importance shows what the forest used to build itself; permutation importance shows what its predictions on new rows depend on. Both come from the same forest (150 trees, trained on 75% of the training fold, with a random noise column added), but they answer different questions and so support different decisions.
+Aspect
+Impurity importance (rf_impurity)
+Permutation importance (rf_perm)
+Question answered
+How much did splits on this variable reduce node impurity while the forest was built?
+How much does held-out AUC fall when this variable's values are shuffled?
+Data used
+Training rows the forest was fitted on
+Inner 25% hold-out rows the forest never saw
+Cost
+Free by-product of fitting
+Extra predictions per variable and repeat (5 repeats, up to 8,000 rows)
+Categoricals
+Summed over a variable's dummies
+All of a variable's dummies shuffled together
+Known bias
+Favours continuous and many-level variables, which offer more split points; a pure-noise column can outscore real variables (it ranked 7th in the original log)
+Less biased toward many-level variables, but shares credit unevenly between correlated variables
+Correlated variables
+Credit is split between them across trees
+Shuffling one leaves its partner intact, so the drop can be near zero even if both matter (for example Zip and District)
+Threshold used here
+Must beat one random noise column
+AUC drop above 2 SD across repeats and above 0
+Scale
+Relative share of total importance
+AUC points lost
+
+
+How this changes the interpretation for feature selection
+Impurity is one-sided evidence. A variable clearly above the noise column is probably worth keeping. A variable below it is not shown to be useless, because the measure discounts binary and categorical variables.
+Permutation is the better basis for keeping or dropping, since it is measured on rows the forest did not fit. A clear drop supports keeping the variable. A near-zero drop is weaker evidence for dropping it when a correlated substitute exists, so refit without the variable before removing one of a pair such as Zip and District.
+The results in this project show the gap. rf_impurity kept about 6 variables (6.2 per fold) and lost 0.030 to 0.035 AUC. rf_perm kept about 15 variables (15.4 per fold) and lost 0.0014 to 0.0016. In the second run, District, Zip and SubjectRace were selected in 0 of 5 folds by impurity and in 5 of 5 by permutation; per-method fold counts for the latest run are not available.
+Practical rule: use impurity to rank and screen, use permutation to decide what to keep, and never drop a variable on impurity alone. In consensus each is one vote among five.
+Both depend on one forest and one inner split per fold, so expect some variation between folds (rf_perm kept 15.4 ± 1.5 variables).
+
+Results
+1. Predictive performance with in-fold selection
+Mean ± SD of ROC AUC over the 5 outer folds. These are honest estimates of the whole "select, then fit" procedure.
+Selector
+Variables kept (mean ± SD)
+Logistic regression AUC
+Gradient boosting AUC
+none
+20.0
+0.8062 ± 0.0079
+0.8255 ± 0.0057
+lasso
+19.6 ± 0.5
+0.8062 ± 0.0079
+0.8247 ± 0.0080
+lasso_1se
+17.8 ± 0.7
+0.8058 ± 0.0077
+0.8227 ± 0.0072
+univariate_lrt
+18.0 ± 0.0
+0.8058 ± 0.0077
+0.8197 ± 0.0080
+rf_perm
+15.4 ± 1.5
+0.8046 ± 0.0073
+0.8241 ± 0.0058
+consensus
+14.8 ± 1.5
+0.8049 ± 0.0082
+0.8220 ± 0.0076
+mutual_info
+9.6 ± 2.2
+0.7982 ± 0.0124
+0.8129 ± 0.0135
+rf_impurity
+6.2 ± 1.0
+0.7716 ± 0.0073
+0.7952 ± 0.0065
+
+
+Reading it:
+No method beats keeping everything. Change in AUC against none:
+Logistic regression: lasso -0.0000, lasso_1se -0.0004, univariate_lrt -0.0004, consensus -0.0013, rf_perm -0.0016, mutual_info -0.0081, rf_impurity -0.0346.
+Gradient boosting: lasso -0.0008, rf_perm -0.0014, lasso_1se -0.0028, consensus -0.0035, univariate_lrt -0.0058, mutual_info -0.0126, rf_impurity -0.0303.
+The first five or six methods are small next to the fold-to-fold SD of about 0.006–0.008. The notebook also printed paired differences against none; they were not included in the output I was given, so this judgement is from the means.
+rf_impurity costs 0.030 to 0.035 AUC and mutual_info 0.008 to 0.013. They keep far fewer variables (6.2 and 9.6) than the other methods, and the AUC falls accordingly, which suggests the variables they drop carry signal. mutual_info is also the noisiest method (AUC SD 0.012–0.014; SD 2.2 variables kept). Impurity importance is already known to favour continuous variables (see the comparison above). Neither should be used on its own.
+lasso, lasso_1se and univariate_lrt barely prune (17.8–19.6 of 20 variables). With this many rows almost everything is significant or gets a non-zero coefficient, as the original log also warned.
+consensus removes about 5 variables (20 → 14.8 per fold) for a small AUC cost, similar to the second run (-0.0018 and -0.0039). Gradient boosting average precision falls more than AUC does (0.2836 to 0.2755; see below).
+Gradient boosting beats logistic regression by about 0.0193 AUC with all variables (0.8255 vs 0.8062), and by 0.014 to 0.024 under every selector. The original log concluded that "logistic regression is adequate" from a gap of about 0.01, so non-linear effects or interactions may matter more than that log suggested.
+
+Average precision and Brier score tell the same story:
+Selector
+Model
+Avg. precision
+Brier score
+none
+logistic regression
+0.2416
+0.0465
+consensus
+logistic regression
+0.2400
+0.0465
+none
+gradient boosting
+0.2836
+0.0452
+consensus
+gradient boosting
+0.2755
+0.0454
+
+
+2. Run history
+ROC AUC with all variables (none) and with the consensus rule, across the three runs.
+Run
+Setup
+Variables
+none: logistic
+none: gradient boosting
+consensus: logistic
+consensus: gradient boosting
+1
+Simple pipeline; District lost to the loading bug
+19
+0.8081
+0.8256
+0.8074
+0.8233
+2
+Simple pipeline; District included
+20
+0.8082
+0.8276
+0.8064
+0.8237
+3 (current)
+Full pipeline with fold-wise imputation; StopDescription added; isTrafficViolation not in the column lists
+20
+0.8062
+0.8255
+0.8049
+0.8220
+
+
+Adding District in run 2 raised gradient boosting AUC by about 0.002 and left logistic regression unchanged. From run 2 to run 3, AUC with all variables fell by about 0.002 for both models. Run 3 changed several things at once (the preprocessing pipeline, the candidate variables, and the apparent loss of isTrafficViolation), so the change cannot be attributed to any one of them.
+
+3. Selection stability
+The per-method fold counts (the stability table) for this run are not in the outputs I was given; only the consensus lists in section 4 are. The second run's table has been removed so that the log does not mix runs. Add feature_selection_stability.csv from this run to rebuild it.
+Thirteen variables are stable (selected by the consensus rule in at least 4 of 5 folds): StopDescription, SubjectAge, SubjectGender, VehicleYear, SubjectWeight, SubjectRace, Zip, night, hour, SubjectHeight, isDriver, SubjectHasPhotoID, District. Whether each was chosen in 4 or 5 folds is not available.
+Three variables are chosen on the full training set but in fewer than 4 of 5 folds: VehicleStyle, SubjectHairColor and month. They are borderline.
+District and Zip are both stable. StopDescription, new in this run, is stable too.
+isLA, weekend, VehicleColor and SubjectEyeColor appear in neither list. isLA was selected in every fold in the second run.
+
+4. Final feature list (consensus)
+The procedure was run once on the full training set, and the result was compared with the CV stability.
+
+List
+Variables
+Selected on full training set (16)
+VehicleStyle, SubjectRace, SubjectHairColor, Zip, StopDescription, District, SubjectAge, SubjectHeight, SubjectWeight, VehicleYear, month, hour, SubjectGender, SubjectHasPhotoID, night, isDriver
+Selected in at least 80% of CV folds (13)
+StopDescription, SubjectAge, SubjectGender, VehicleYear, SubjectWeight, SubjectRace, Zip, night, hour, SubjectHeight, isDriver, SubjectHasPhotoID, District
+Only in the full-train selection (unstable)
+VehicleStyle, SubjectHairColor, month
+Only stable in CV (not in full-train selection)
+None
+
+
+The stable list is a subset of the full-train list. The three extra variables (VehicleStyle, SubjectHairColor, month) were chosen on the full training set but in fewer than 4 of 5 folds, so they are borderline. Compared with the second run, StopDescription is new, and isTrafficViolation and isLA, which were in both lists before, do not appear in either list.
+
+Conclusions
+Feature selection does not improve accuracy here. Keeping all 20 variables gives the best or tied-best AUC for both models (0.8062 logistic regression, 0.8255 gradient boosting). The case for selecting is a simpler model, not a better score.
+Recommended reduced set: the 13 stable consensus variables (StopDescription, SubjectAge, SubjectGender, VehicleYear, SubjectWeight, SubjectRace, Zip, night, hour, SubjectHeight, isDriver, SubjectHasPhotoID, District). The per-fold consensus rule costs about 0.0013 AUC (logistic regression) to 0.0035 (gradient boosting) relative to using everything; the fixed 13-variable list itself was not scored separately. If accuracy is the only goal, keep all 20.
+Use gradient boosting if the goal is the highest score; it leads logistic regression by about 0.0193 AUC with all variables.
+
+Glossary (How to Read Each Output)
+Variables kept: number of original variables (not dummy columns) the selector kept in a fold, averaged over the 5 folds, with the SD across folds.
+ROC AUC (outer fold): ability to rank searched stops above non-searched ones (0.5 = coin flip, 1 = perfect), measured on a fold that played no part in the selection or fitting.
+Average precision: area under the precision–recall curve; more informative than AUC when only 5.5% of stops lead to a search (a random model would score about 0.055).
+Brier score: mean squared error of the predicted probabilities; lower is better.
+Selection frequency: the number of outer folds (out of 5) in which a variable was kept. Variables chosen in only 1–2 folds are not reliably useful.
+lasso vs lasso_1se: the best-AUC penalty keeps almost everything; the 1-SE version picks the strongest penalty that is statistically as good, so it prunes more.
+rf_perm: drop in held-out AUC when a variable's values are shuffled; a variable's dummies are shuffled together so a categorical is judged as a whole.
+consensus: a variable is kept if at least 3 of the 5 voting methods choose it.
+Stable (final list): selected in at least 80% of the outer folds.
+Random intercept / ICC (random-effects extension): a random intercept gives each district its own baseline search rate, shrunk toward the overall average. The ICC is the share of the variation in the log-odds of a search that lies between districts; near zero means the district effect adds little.
+
+
