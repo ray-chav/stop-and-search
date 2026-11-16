@@ -12,6 +12,17 @@ All documentation from 10/20 onwards goes here. Write at the top of the document
 - [ ] Here's something OP needs to remind themselves or someone else to do
 - [ ] Here's another list item
 
+# 11.15 \- Rachel
+
+* Uploaded SHAP and PDP test plots to the GitHub visualizations folder
+ * Need to be redone with updated modeling
+* Need to provide sources & references for interpreting the results
+* To Do:  
+- [ ] Reconstruct PDP and SHAP plots
+- [ ] Provide interpretations for the plots on the laugh
+- [ ] Identify important variables -> identify sources / literature on these topics -> integrate into slides
+- [ ] Complete works cited
+
 # 11.11-13 \- Surafel
 
 * Finalized hyperparameter tuning for our models of choice: LASSO Logistic Regression, Decision Tree Classifier, Random Forest Classifier
